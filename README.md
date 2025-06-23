@@ -46,7 +46,7 @@ Follow these steps to run the example locally:
 ### 1. Clone the repository
 
 ```bash
-git clone git@github.com:ably/docs.git
+git clone https://github.com/mittulmadaan/ably-liveobjects-examples.git
 ```
 
 ### 2. Set up your environment variables
