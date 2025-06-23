@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jackpot Betting Game</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <img src="src/silverspin.webp" alt="Logo" class="app-logo" />
+    <h1 class="app-title">Jackpot Betting Game</h1>
+  </header>
+  <div class="ably-status">📡 Connecting to Ably...</div>
+
+  <main class="dashboard">
+    <!-- Jackpot Pool -->
+    <section class="card jackpot-section">
+      <h2>💰 Current Jackpot Pool</h2>
+      <div id="jackpot-amount" class="jackpot-amount">$0</div>
+      <p class="subtext">Place your bets to grow the prize!</p>
+    </section>
+
+    <!-- Leaderboard -->
+    <section class="card leaderboard-section">
+      <h2>🏆 Live Leaderboard</h2>
+      <p class="subtext">Real-time player rankings</p>
+      <ul id="leaderboard-list" class="leaderboard-list">
+        <li class="empty">No players yet<br><span class="small">Join to see the leaderboard!</span></li>
+      </ul>
+    </section>
+
+    <!-- Join + Betting -->
+    <section class="card betting-section">
+      <h2>🎯 Place Your Bets</h2>
+      
+      <!-- Username Input -->
+      <div class="form-row">
+        <input id="username" type="text" placeholder="Enter your username" />
+        <button id="join-game">Join Game</button>
+      </div>
+
+      <!-- Betting Buttons -->
+      <div id="bet-controls" class="hidden bet-buttons">
+        <button class="bet-button" data-amount="10">$10</button>
+        <button class="bet-button" data-amount="20">$20</button>
+        <button class="bet-button" data-amount="50">$50</button>
+      </div>
+    </section>
+
+    <!-- Add this below the betting-section in your existing HTML -->
+<section class="card reset-section">
+  <h2>🔄 Admin Controls</h2>
+  <button id="reset-game">Reset Game</button>
+</section>
+
+
+  </main>
+
+  <footer>
+    <p>Built using Ably LiveObjects</p>
+  </footer>
+
+  <script type="module" src="src/main.ts"></script>
+</body>
+</html>
+
+
+<!-- Leaderboard -->
