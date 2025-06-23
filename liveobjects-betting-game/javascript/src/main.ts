@@ -8,7 +8,7 @@ let leaderboardMap: LiveMap<string, number>;
 
 const client = new Realtime({
   clientId,
-  key: import.meta.env.VITE_ABLY_KEY as string,
+  key: 'eytLWA.WlG2vg:L3SlBp6FDj6KYIjzFo11Q-h6Zuxe8jMTkDTt5vBctbg',
   plugins: { Objects },
 });
 
