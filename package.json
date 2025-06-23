@@ -9,7 +9,7 @@
     "liveobjects-betting-game/javascript"
   ],
   "scripts": {
-    "liveobjects-betting-game-javascript": "yarn workspace liveobjects-betting-game-javascript dev"
+    "liveobjects-betting-game-javascript": "yarn workspace liveobjects-betting-game-javascript build"
   },
   "dependencies": {
     "@ably/chat": "^0.7.0",
