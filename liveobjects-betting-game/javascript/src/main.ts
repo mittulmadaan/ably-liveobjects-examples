@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 
 const clientId = nanoid();
 let username = '';
+let jackpotCounter: LiveCounter;
 let leaderboardMap: LiveMap<string, number>;
 
 const client = new Realtime({
@@ -12,9 +13,8 @@ const client = new Realtime({
   plugins: { Objects },
 });
 
-const channelName = 'jackpot-betting-2';
-const channel = client.channels.get(channelName, {
-  modes: ['OBJECT_PUBLISH', 'OBJECT_SUBSCRIBE'],
+const channel = client.channels.get('jackpot-betting-7', {
+  modes: ['OBJECT_PUBLISH', 'OBJECT_SUBSCRIBE', 'PUBLISH', 'SUBSCRIBE'],
 });
 
 async function main() {
@@ -22,32 +22,122 @@ async function main() {
   await channel.attach();
   updateConnectionStatus('✅ Connected to Ably');
 
-  const objects = channel.objects;
-  const root = await objects.getRoot();
+  const root = await channel.objects.getRoot();
 
-  // Create or fetch leaderboard
   if (!root.get('leaderboard')) {
     await root.set('leaderboard', await channel.objects.createMap());
   }
   leaderboardMap = root.get('leaderboard') as LiveMap<string, number>;
 
-  // Create jackpot counter
   if (!root.get('jackpot-counter')) {
     await root.set('jackpot-counter', await channel.objects.createCounter());
   }
-  const jackpotCounter = root.get('jackpot-counter') as LiveCounter;
+  jackpotCounter = root.get('jackpot-counter') as LiveCounter;
   jackpotCounter.subscribe(() => updateJackpotDisplay(jackpotCounter));
 
-  setupUI(root, jackpotCounter);
+  // Listen for reset messages from other clients
+  channel.subscribe('game-reset', async (message) => {
+    console.log('Reset message received:', message);
+    
+    // Don't process our own reset message
+    if (message.clientId === clientId) {
+      return;
+    }
+
+    // Unsubscribe from old counter
+    if (jackpotCounter) {
+      jackpotCounter.unsubscribe();
+    }
+
+    // Get the new counter and subscribe to it
+    jackpotCounter = root.get('jackpot-counter') as LiveCounter;
+    jackpotCounter.subscribe(() => updateJackpotDisplay(jackpotCounter));
+    updateJackpotDisplay(jackpotCounter);
+
+    // Reset UI for other clients
+    username = '';
+    const formRow = document.querySelector('.form-row')!;
+    document.querySelectorAll('.bet-button').forEach(button => {
+      const cloned = button.cloneNode(true);
+      button.replaceWith(cloned);
+    });
+
+    formRow.innerHTML = `
+      <input id="username" type="text" placeholder="Enter your username" />
+      <button id="join-game">Join Game</button>
+    `;
+    document.getElementById('bet-controls')!.classList.add('hidden');
+    bindJoinButton(root);
+    
+    // Re-render leaderboard
+    renderLeaderboard();
+  });
+
+  setupUI(root);
   updateJackpotDisplay(jackpotCounter);
   updateLeaderboard();
 }
 
-function setupUI(root: LiveMap<DefaultRoot>, counter: LiveCounter) {
+
+function setupUI(root: LiveMap<DefaultRoot>) {
+  const resetBtn = document.getElementById('reset-game');
+  bindJoinButton(root);
+
+  resetBtn.addEventListener('click', async () => {
+  const confirmReset = confirm('Are you sure you want to reset the game? This will clear the jackpot and leaderboard.');
+  if (!confirmReset) return;
+
+  // Step 1: Remove old counter
+  const oldCounter = root.get('jackpot-counter') as LiveCounter;
+  if (oldCounter) {
+    oldCounter.unsubscribe();
+  }
+
+  // Step 2: Create and set a new counter
+  const newCounter = await channel.objects.createCounter();
+  await root.set('jackpot-counter', newCounter);
+
+  // Step 3: Fetch it from root to ensure consistency
+  jackpotCounter = root.get('jackpot-counter') as LiveCounter;
+
+  // Step 4: Subscribe again and update display
+  jackpotCounter.subscribe(() => updateJackpotDisplay(jackpotCounter));
+  updateJackpotDisplay(jackpotCounter);
+
+  // Step 5: Clear leaderboard
+  const keys = await leaderboardMap.keys();
+  await Promise.all(keys.map((key) => leaderboardMap.remove(key)));
+  renderLeaderboard();
+
+  // Step 6: Notify all other clients about the reset
+  await channel.publish('game-reset', {
+    timestamp: Date.now(),
+    resetBy: clientId
+  });
+
+  // Step 7: Reset UI
+  username = '';
+  const formRow = document.querySelector('.form-row')!;
+  // Defensive reset: remove any lingering bet button event listeners
+document.querySelectorAll('.bet-button').forEach(button => {
+  const cloned = button.cloneNode(true);
+  button.replaceWith(cloned); // removes any previous event listeners
+});
+
+  formRow.innerHTML = `
+    <input id="username" type="text" placeholder="Enter your username" />
+    <button id="join-game">Join Game</button>
+  `;
+  document.getElementById('bet-controls')!.classList.add('hidden');
+  bindJoinButton(root); // rebinding after UI re-render
+});
+
+}
+
+function bindJoinButton(root: LiveMap<DefaultRoot>) {
   const joinBtn = document.getElementById('join-game')!;
   const usernameInput = document.getElementById('username') as HTMLInputElement;
   const betControls = document.getElementById('bet-controls')!;
-  const resetBtn = document.getElementById('reset-game');
 
   joinBtn.addEventListener('click', () => {
     if (!usernameInput.value.trim()) {
@@ -67,80 +157,21 @@ function setupUI(root: LiveMap<DefaultRoot>, counter: LiveCounter) {
     betControls.classList.remove('hidden');
 
     document.querySelectorAll('.bet-button').forEach((button) => {
-      const amount = parseFloat(button.getAttribute('data-amount')!);
-      button.addEventListener('click', async () => {
-        await counter.increment(amount);
-        const current = (await leaderboardMap.get(username)) || 0;
-        await leaderboardMap.set(username, current + amount);
-      });
-    });
+  const amount = parseFloat(button.getAttribute('data-amount')!);
+
+  const cloned = button.cloneNode(true) as HTMLElement;
+  button.replaceWith(cloned); // removes any previous event listeners
+
+  cloned.addEventListener('click', async () => {
+    await jackpotCounter.increment(amount);
+    const current = (await leaderboardMap.get(username)) || 0;
+    await leaderboardMap.set(username, current + amount);
+    updateJackpotDisplay(jackpotCounter);
   });
+});
 
-if (resetBtn) {
-  resetBtn.addEventListener('click', async () => {
-    const confirmReset = confirm('Are you sure you want to reset the game? This will clear the jackpot and leaderboard.');
-    if (!confirmReset) return;
-
-    // Decrement jackpot to 0
-    const currentValue = counter.value();
-    if (currentValue > 0) {
-      await counter.decrement(currentValue);
-    }
-
-    // Clear leaderboard
-    const keys = await leaderboardMap.keys();
-    await Promise.all(keys.map((key) => leaderboardMap.remove(key)));
-
-    updateJackpotDisplay(counter);
-    renderLeaderboard();
-
-    // Reset username and UI
-    username = '';
-    const formRow = document.querySelector('.form-row')!;
-    formRow.innerHTML = `
-      <input id="username" type="text" placeholder="Enter your username" />
-      <button id="join-game">Join Game</button>
-    `;
-
-    // Hide betting buttons
-    const betControls = document.getElementById('bet-controls')!;
-    betControls.classList.add('hidden');
-
-    // Rebind join button handler
-    const joinBtn = document.getElementById('join-game')!;
-    const usernameInput = document.getElementById('username') as HTMLInputElement;
-
-    joinBtn.addEventListener('click', () => {
-      if (!usernameInput.value.trim()) {
-        alert('Please enter a username');
-        return;
-      }
-
-      username = usernameInput.value.trim();
-
-      formRow.innerHTML = `
-        <div class="betting-user-label">
-          🎮 Betting as 
-          <strong><span class="username">${username}</span></strong>
-        </div>`;
-
-      betControls.classList.remove('hidden');
-
-      document.querySelectorAll('.bet-button').forEach((button) => {
-        const amount = parseFloat(button.getAttribute('data-amount')!);
-        button.addEventListener('click', async () => {
-          await counter.increment(amount);
-          const current = (await leaderboardMap.get(username)) || 0;
-          await leaderboardMap.set(username, current + amount);
-        });
-      });
-    });
   });
 }
-
-
-}
-
 
 function updateJackpotDisplay(counter: LiveCounter) {
   const jackpotElement = document.getElementById('jackpot-amount')!;
@@ -155,10 +186,7 @@ function updateConnectionStatus(status: string) {
 }
 
 function updateLeaderboard() {
-  leaderboardMap.subscribe(() => {
-    renderLeaderboard();
-  });
-
+  leaderboardMap.subscribe(() => renderLeaderboard());
   renderLeaderboard();
 }
 
@@ -170,10 +198,7 @@ async function renderLeaderboard() {
   const sorted = [...entries].sort((a, b) => b[1] - a[1]);
 
   if (sorted.length === 0) {
-    const li = document.createElement('li');
-    li.classList.add('empty');
-    li.innerHTML = 'No players yet<br><span class="small">Join the game to see the leaderboard!</span>';
-    list.appendChild(li);
+    list.innerHTML = `<li class="empty">No players yet<br><span class="small">Join the game to see the leaderboard!</span></li>`;
     return;
   }
 
@@ -185,4 +210,3 @@ async function renderLeaderboard() {
 }
 
 main().catch(console.error);
-// final
