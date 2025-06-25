@@ -1,4 +1,4 @@
-# 🔢 Synchronizing Numeric Values with LiveCounter
+# 🔢 Synchronizing Numeric Values with LiveCounter and key-value with LiveMap
 
 **LiveCounter** enables clients to update and synchronize numerical values in realtime using [Ably LiveObjects](https://ably.com/docs/liveobjects).
 
