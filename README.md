@@ -1,18 +1,17 @@
-# 🔢 Synchronizing Numeric Values with LiveCounter and key-value with LiveMap
+# 🚀 Ably LiveObjects Examples
 
-**LiveCounter** enables clients to update and synchronize numerical values in realtime using [Ably LiveObjects](https://ably.com/docs/liveobjects).
+This repository contains interactive examples showcasing how to use **Ably LiveObjects** to build real-time collaborative applications using `LiveCounter`, `LiveMap`, and other LiveObject data types.
 
-It supports atomic `increment()` and `decrement()` operations, ensuring consistency across clients when multiple users modify the value simultaneously.
+LiveObjects simplifies the complexity of state synchronization across clients by handling real-time updates, conflict resolution, and durability out of the box.
 
-Ideal use cases include:
+## 🎰 Ably LiveObjects Jackpot Betting Game
 
-- 🗳️ Voting systems  
-- ❤️ Reaction counts  
-- 🎮 Game statistics  
-- 🏆 Leaderboards  
-- 📊 Live metrics
+A real-time demo showcasing how to build a collaborative betting game using **Ably LiveObjects**, powered by:
 
-LiveCounter is built on top of **Ably Pub/Sub** and benefits from its performance, reliability, and scalability.
+- `🔢 LiveCounter` for tracking the jackpot pool
+- `🗺️ LiveMap` for managing a live leaderboard
+
+Try the live demo 👉 **[Try the demo](https://ably-liveobjects-examples.onrender.com/)**
 
 ---
 
@@ -20,6 +19,18 @@ LiveCounter is built on top of **Ably Pub/Sub** and benefits from its performanc
 
 [Ably LiveObjects](https://ably.com/docs/liveobjects) is a high-level abstraction over Ably's real-time messaging system, designed to simplify the management of **shared state** across multiple clients. With LiveObjects, you don’t need to manage synchronization logic manually—Ably handles that for you.
 
+---
+
+### 🎮 What This Demo Does
+
+This interactive betting game demonstrates how to:
+
+- ✅ Track and update a **jackpot pool** using `LiveCounter`
+- 🏆 Show a **real-time leaderboard** using `LiveMap`
+- 👤 Allow users to **join the game** and place bets
+- 🔄 Let an admin **reset the game state** for all clients
+
+All updates are propagated instantly across all connected clients using Ably’s global pub/sub infrastructure.
 ---
 
 ## 🔧 API Reference
@@ -77,7 +88,7 @@ yarn run liveobjects-betting-game-javascript
 
 ### 5. Open the app in your browser
 
-Visit [http://localhost:5173](http://localhost:5173) in two tabs to see LiveCounter in action.
+Visit [http://localhost:5173](http://localhost:5173) in two tabs to see LiveObject in action.
 
 ---
 
