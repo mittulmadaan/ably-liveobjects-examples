@@ -26,7 +26,7 @@ Find out more about [LiveCounter](/docs/liveobjects/counter).
 1. Clone the [Ably docs](https://github.com/ably/docs) repository where this example can be found:
 
 ```sh
-git clone git@github.com:ably/docs.git
+git clone https://github.com/mittulmadaan/ably-liveobjects-examples.git
 ```
 
 2. Change directory:
@@ -52,7 +52,7 @@ yarn install
 6. Run the server:
 
 ```sh
-yarn run liveobjects-live-counter-javascript
+yarn run liveobjects-betting-game-javascript
 ```
 
 7. Try it out by opening two tabs to [http://localhost:5173/](http://localhost:5173/) with your browser to see the result.
